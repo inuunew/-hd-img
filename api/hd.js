@@ -35,10 +35,15 @@ const upstreamForm = new FormData();
 upstreamForm.append("scale", scale);
 upstreamForm.append("file", blob, uploaded.originalFilename || "photo.jpg");
 
-const upstreamRes = await fetch(
+    const upstreamRes = await fetch(
   `${JEREXD_ENDPOINT}?apikey=${encodeURIComponent(JEREXD_API_KEY)}`,
   {
     method: "POST",
+    headers: {
+      "User-Agent": "curl/8.7.1",
+      "Accept": "application/json",
+      "Accept-Encoding": "identity"
+    },
     body: upstreamForm
   }
 );
