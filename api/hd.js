@@ -7,19 +7,11 @@ const formidable = require("formidable");
 const fs = require("fs");
 
 const JEREXD_ENDPOINT = "https://api.jerexd.my.id/api/tools/hd2";
+const JEREXD_API_KEY = "jere_yy3jllbdh2f0";
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
     res.status(405).json({ status: false, message: "Method not allowed" });
-    return;
-  }
-
-  const apiKey = process.env.JEREXD_API_KEY;
-  if (!apiKey) {
-    res.status(500).json({
-      status: false,
-      message: "JEREXD_API_KEY belum diatur di environment variables Vercel."
-    });
     return;
   }
 
