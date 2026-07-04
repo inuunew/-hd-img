@@ -8,15 +8,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-// Terima file dari field apa pun
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Pakai upload.any() agar semua field file diterima
 app.post("/api/enhance", upload.any(), enhanceHandler);
 
 export default app;
