@@ -167,6 +167,29 @@ function setLoading(loading, msg){
   if(loading) setStatus((msg||"Sedang memproses gambar, mohon tunggu...") , "");
 }
 
+// Vercel serverless function punya batas ukuran body request (~4.5MB).
+// Supaya tidak kena limit itu, foto yang lebih besar dari itu otomatis
+// di-resize/dikompres dulu di browser sebelum dikirim.
+async function prepareFile(file){
+  const MAX_BYTES = 4 * 1024 * 1024; // beri margin aman di bawah 4.5MB
+  if (file.size <= MAX_BYTES) return file;
+
+  const bitmap = await createImageBitmap(file);
+  const MAX_DIM = 2000;
+  const scale = Math.min(1, MAX_DIM / Math.max(bitmap.width, bitmap.height));
+  const newW = Math.round(bitmap.width * scale);
+  const newH = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = newW;
+  canvas.height = newH;
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, newW, newH);
+
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.85));
+  const baseName = file.name.replace(/\.[^.]+$/, "") || "photo";
+  return new File([blob], baseName + ".jpg", { type: "image/jpeg" });
+}
+
 async function processImage(file){
   const form = new FormData();
   form.append("scale", selectedScale);
@@ -177,12 +200,15 @@ async function processImage(file){
     body: form
   });
 
-  let data;
-  try{
-    data = await res.json();
-  }catch(e){
-    throw new Error("Server tidak memberikan respons yang valid.");
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    if (res.status === 413) {
+      throw new Error("Ukuran file masih terlalu besar untuk server.");
+    }
+    throw new Error(`Server mengembalikan respons tidak terduga (status ${res.status}).`);
   }
+
+  const data = await res.json();
   if(!res.ok || !data.status){
     throw new Error(data && data.message ? data.message : "Permintaan ditolak server.");
   }
@@ -203,8 +229,11 @@ document.getElementById("runBtn").addEventListener("click", async ()=>{
       return;
     }
 
+    setLoading(true, "Menyiapkan gambar...");
+    const preparedFile = await prepareFile(fileInput.files[0]);
+
     setLoading(true, "Memproses dengan engine HD (skala " + selectedScale + "x)...");
-    const result = await processImage(fileInput.files[0]);
+    const result = await processImage(preparedFile);
     setLoading(false);
 
     document.getElementById("resultImg").src = result.upscaled_url;
