@@ -3,19 +3,19 @@ import FormData from "form-data";
 
 export async function enhanceHandler(req, res) {
   try {
-    // Cek file
-    if (!req.file) {
+    // Ambil file pertama dari req.files (karena pakai upload.any())
+    const file = req.files?.[0];
+    if (!file) {
       return res.status(400).json({ error: "Tidak ada file gambar" });
     }
 
-    // Buat FormData untuk dikirim ke API eksternal
+    // Kirim ke API eksternal dengan field "image" (sesuai permintaan API)
     const form = new FormData();
-    form.append("image", req.file.buffer, {
-      filename: req.file.originalname,
-      contentType: req.file.mimetype,
+    form.append("image", file.buffer, {
+      filename: file.originalname,
+      contentType: file.mimetype,
     });
 
-    // Panggil API
     const apiResponse = await axios.post(
       "https://api.jerexd.my.id/api/ai/wink",
       form,
@@ -23,18 +23,16 @@ export async function enhanceHandler(req, res) {
         params: { apikey: "jere_yy3jllbdh2f0" },
         headers: {
           ...form.getHeaders(),
-          // Header ringan, tidak perlu meniru aplikasi mobile
           "User-Agent": "Mozilla/5.0 (compatible; WinkEnhancer/1.0)",
         },
         timeout: 15000,
-        validateStatus: () => true, // tangkap semua status
+        validateStatus: () => true,
       }
     );
 
     const data = apiResponse.data;
     console.log("API Response:", JSON.stringify(data));
 
-    // Cek sukses (sesuai struktur respons API)
     if (
       data &&
       (data.status === true || data.statusCode === 200) &&
@@ -46,9 +44,7 @@ export async function enhanceHandler(req, res) {
         creator: data.creator || "",
       });
     } else {
-      // Ambil pesan error jika ada
-      const errorMsg =
-        data?.message || data?.error || "Respons API tidak valid";
+      const errorMsg = data?.message || data?.error || "Respons API tidak valid";
       throw new Error(errorMsg);
     }
   } catch (error) {
