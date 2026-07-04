@@ -127,11 +127,14 @@
   <div class="panel" id="resultPanel" style="display:none;">
     <label>Hasil</label>
     <div class="preview">
-      <img id="resultImg" src="" alt="Hasil HD">
+      <img id="resultImg" src="" alt="Hasil HD" style="display:none;">
+      <p style="font-family:Arial, sans-serif;font-size:13px;word-break:break-all;background:#fbfaf7;border:1px solid #ddd;padding:10px;margin:0 0 10px;">
+        <a id="resultUrlText" href="" target="_blank" style="color:var(--accent-2);"></a>
+      </p>
       <div class="preview-caption">
         <span id="resultMeta"></span>
       </div>
-      <a class="download" id="downloadLink" href="" download="hd-photo.png" target="_blank">Unduh Gambar</a>
+      <a class="download" id="downloadLink" href="" download="hd-photo.png" target="_blank">Buka / Unduh Gambar</a>
     </div>
   </div>
 
@@ -236,7 +239,13 @@ document.getElementById("runBtn").addEventListener("click", async ()=>{
     const result = await processImage(preparedFile);
     setLoading(false);
 
+    document.getElementById("resultImg").style.display = "none";
+    document.getElementById("resultImg").onload = function(){ this.style.display = "block"; };
+    document.getElementById("resultImg").onerror = function(){ this.style.display = "none"; };
     document.getElementById("resultImg").src = result.upscaled_url;
+
+    document.getElementById("resultUrlText").href = result.upscaled_url;
+    document.getElementById("resultUrlText").textContent = result.upscaled_url;
     document.getElementById("downloadLink").href = result.upscaled_url;
     document.getElementById("resultMeta").textContent =
       `Skala: ${result.scale_applied || selectedScale+"x"} · Engine: ${result.engine || "-"}`;
