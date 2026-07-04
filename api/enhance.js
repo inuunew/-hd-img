@@ -1,7 +1,7 @@
 import axios from "axios";
 import FormData from "form-data";
+import busboy from "busboy";
 
-// Matikan bodyParser bawaan Vercel
 export const config = {
   api: {
     bodyParser: false,
@@ -19,43 +19,33 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Request harus multipart/form-data" });
     }
 
-    // Ambil scale dari query string
     const scale = req.query.scale || "4";
     if (!["2", "4"].includes(scale)) {
       return res.status(400).json({ error: "Scale hanya bisa 2 atau 4" });
     }
 
-    // Ambil boundary
-    const boundary = contentType.split("boundary=")[1];
-    if (!boundary) {
-      return res.status(400).json({ error: "Boundary tidak ditemukan" });
-    }
-
-    // Baca body mentah
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
-    }
-    const body = Buffer.concat(chunks).toString("binary");
-
-    // Parsing file dari body mentah
-    const parts = body.split(`--${boundary}`);
+    // Parsing file dengan busboy
+    const bb = busboy({ headers: req.headers });
     let fileBuffer = null;
     let fileName = "";
     let mimeType = "";
 
-    for (const part of parts) {
-      if (part.includes("Content-Disposition") && part.includes("filename=")) {
-        const nameMatch = part.match(/filename="(.+?)"/);
-        if (nameMatch) fileName = nameMatch[1];
-        const typeMatch = part.match(/Content-Type: (.+)/);
-        if (typeMatch) mimeType = typeMatch[1].trim();
-        const dataStart = part.indexOf("\r\n\r\n") + 4;
-        const dataEnd = part.lastIndexOf("\r\n");
-        fileBuffer = Buffer.from(part.slice(dataStart, dataEnd), "binary");
-        break;
-      }
-    }
+    bb.on("file", (fieldname, file, info) => {
+      const chunks = [];
+      file.on("data", (chunk) => chunks.push(chunk));
+      file.on("end", () => {
+        fileBuffer = Buffer.concat(chunks);
+        fileName = info.filename;
+        mimeType = info.mimeType;
+      });
+    });
+
+    // Tunggu busboy selesai
+    await new Promise((resolve, reject) => {
+      bb.on("close", resolve);
+      bb.on("error", reject);
+      req.pipe(bb);
+    });
 
     if (!fileBuffer) {
       return res.status(400).json({ error: "Tidak ada file gambar" });
