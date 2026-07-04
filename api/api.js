@@ -9,6 +9,7 @@ export async function enhanceHandler(req, res) {
     }
 
     const form = new FormData();
+    // Coba gunakan field "file" jika "image" tidak berhasil
     form.append("image", req.file.buffer, {
       filename: req.file.originalname,
       contentType: req.file.mimetype,
@@ -21,13 +22,10 @@ export async function enhanceHandler(req, res) {
         params: { apikey: "jere_yy3jllbdh2f0" },
         headers: {
           ...form.getHeaders(),
-          // Header tiruan dari aplikasi Wink (mobile)
-          "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36",
-          "Origin": "https://wink.ai",
-          "Referer": "https://wink.ai/image-enhancer/upload",
-          "sec-ch-ua": "\"Google Chrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
-          "sec-ch-ua-mobile": "?1",
-          "sec-ch-ua-platform": "\"Android\"",
+          // Biarkan header default, jangan meniru aplikasi lain dulu
+          // "User-Agent": "Mozilla/5.0 (Linux; Android 10; K)...",
+          // "Origin": "https://wink.ai",
+          // "Referer": "https://wink.ai/image-enhancer/upload",
         },
         timeout: 15000,
       }
@@ -44,11 +42,18 @@ export async function enhanceHandler(req, res) {
       throw new Error("Respons API tidak valid");
     }
   } catch (error) {
-    console.error("Proxy error:", error.message);
+    // Logging lengkap
+    console.error("=== PROXY ERROR ===");
+    console.error("Message:", error.message);
     if (error.response) {
       console.error("Status:", error.response.status);
+      console.error("Headers:", JSON.stringify(error.response.headers));
       console.error("Data:", JSON.stringify(error.response.data));
+    } else if (error.request) {
+      console.error("No response received");
     }
+    console.error("====================");
+
     res.status(500).json({
       success: false,
       error: error.response?.data?.message || error.message,
