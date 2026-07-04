@@ -9,8 +9,7 @@ export async function enhanceHandler(req, res) {
     }
 
     const form = new FormData();
-    // Coba gunakan field "file" jika "image" tidak berhasil
-    form.append("image", req.file.buffer, {
+    form.append("file", req.file.buffer, {   // <-- coba "file", bukan "image"
       filename: req.file.originalname,
       contentType: req.file.mimetype,
     });
@@ -22,41 +21,48 @@ export async function enhanceHandler(req, res) {
         params: { apikey: "jere_yy3jllbdh2f0" },
         headers: {
           ...form.getHeaders(),
-          // Biarkan header default, jangan meniru aplikasi lain dulu
-          // "User-Agent": "Mozilla/5.0 (Linux; Android 10; K)...",
-          // "Origin": "https://wink.ai",
-          // "Referer": "https://wink.ai/image-enhancer/upload",
+          // Tiruan header dari aplikasi Wink (mobile)
+          "accept": "*/*",
+          "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36",
+          "Origin": "https://wink.ai",
+          "Referer": "https://wink.ai/image-enhancer/upload",
+          "sec-ch-ua": "\"Google Chrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+          "sec-ch-ua-mobile": "?1",
+          "sec-ch-ua-platform": "\"Android\"",
+          "ab_info": JSON.stringify({ ab_codes: [], version: "1.4.4" }),
+          // Cookie tidak perlu, karena API key sebagai pengganti otentikasi
         },
         timeout: 15000,
+        validateStatus: () => true, // Tangkap semua status, jangan throw error otomatis
       }
     );
 
-    const data = apiResponse.data;
-    if (data.status && data.resultUrl) {
+    console.log("API Response Status:", apiResponse.status);
+    console.log("API Response Data:", JSON.stringify(apiResponse.data));
+
+    if (apiResponse.status === 200 && apiResponse.data?.status && apiResponse.data?.resultUrl) {
       res.json({
         success: true,
-        resultUrl: data.resultUrl,
-        creator: data.creator || "",
+        resultUrl: apiResponse.data.resultUrl,
+        creator: apiResponse.data.creator || "",
       });
     } else {
-      throw new Error("Respons API tidak valid");
+      // Ambil pesan error dari API jika ada
+      const msg = apiResponse.data?.message || apiResponse.data?.error || "Respons API tidak valid";
+      throw new Error(msg);
     }
   } catch (error) {
-    // Logging lengkap
     console.error("=== PROXY ERROR ===");
     console.error("Message:", error.message);
     if (error.response) {
       console.error("Status:", error.response.status);
-      console.error("Headers:", JSON.stringify(error.response.headers));
       console.error("Data:", JSON.stringify(error.response.data));
-    } else if (error.request) {
-      console.error("No response received");
     }
     console.error("====================");
 
     res.status(500).json({
       success: false,
-      error: error.response?.data?.message || error.message,
+      error: error.response?.data?.message || error.response?.data?.error || error.message,
     });
   }
 }
