@@ -31,16 +31,17 @@ module.exports = async (req, res) => {
     const buffer = fs.readFileSync(uploaded.filepath);
     const blob = new Blob([buffer], { type: uploaded.mimetype || "image/jpeg" });
 
-    const upstreamForm = new FormData();
-    upstreamForm.append("apikey", JEREXD_API_KEY);
-    upstreamForm.append("scale", scale);
-    upstreamForm.append("file", blob, uploaded.originalFilename || "photo.jpg");
+const upstreamForm = new FormData();
+upstreamForm.append("scale", scale);
+upstreamForm.append("file", blob, uploaded.originalFilename || "photo.jpg");
 
-    const upstreamRes = await fetch(JEREXD_ENDPOINT, {
-      method: "POST",
-      body: upstreamForm
-    });
-
+const upstreamRes = await fetch(
+  `${JEREXD_ENDPOINT}?apikey=${encodeURIComponent(JEREXD_API_KEY)}`,
+  {
+    method: "POST",
+    body: upstreamForm
+  }
+);a
     const data = await upstreamRes.json();
     res.status(upstreamRes.status).json(data);
   } catch (err) {
