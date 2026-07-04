@@ -1,10 +1,9 @@
 {
-  "name": "wink-enhancer",
+  "name": "hd-photo",
   "version": "1.0.0",
-  "type": "module",
+  "private": true,
+  "description": "Website upscaler foto HD memakai API jerexd, dideploy di Vercel dengan API key aman di server.",
   "dependencies": {
-    "axios": "^1.7.0",
-    "form-data": "^4.0.0",
-    "busboy": "^1.6.0"
+    "formidable": "^3.5.1"
   }
 }
