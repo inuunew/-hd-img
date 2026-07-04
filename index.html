@@ -49,7 +49,7 @@
       if (!file) return alert('Pilih foto dulu');
 
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', file);   // <-- pastikan 'image'
 
       document.getElementById('status').innerText = 'Memproses...';
       document.getElementById('result').innerHTML = '';
