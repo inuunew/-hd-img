@@ -43,8 +43,24 @@ const upstreamRes = await fetch(
   }
 );
 
-    const data = await upstreamRes.json();
-    res.status(upstreamRes.status).json(data);
+    const text = await upstreamRes.text();
+
+console.log("STATUS:", upstreamRes.status);
+console.log("BODY:", text);
+
+let data;
+try {
+  data = JSON.parse(text);
+} catch {
+  return res.status(500).json({
+    status: false,
+    upstream_status: upstreamRes.status,
+    upstream_body: text
+  });
+}
+
+res.status(upstreamRes.status).json(data);
+    
   } catch (err) {
     res.status(500).json({
       status: false,
