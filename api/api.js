@@ -1,24 +1,61 @@
-import express from "express";
-import multer from "multer";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { enhanceHandler } from "./api/api.js";
+import axios from "axios";
+import FormData from "form-data";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export async function enhanceHandler(req, res) {
+  try {
+    // Cek file
+    if (!req.file) {
+      return res.status(400).json({ error: "Tidak ada file gambar" });
+    }
 
-const app = express();
+    // Buat FormData untuk dikirim ke API eksternal
+    const form = new FormData();
+    form.append("image", req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
+    });
 
-// Konfigurasi multer (simpan di memory, terima field "image")
-const upload = multer({ storage: multer.memoryStorage() });
+    // Panggil API
+    const apiResponse = await axios.post(
+      "https://api.jerexd.my.id/api/ai/wink",
+      form,
+      {
+        params: { apikey: "jere_yy3jllbdh2f0" },
+        headers: {
+          ...form.getHeaders(),
+          // Header ringan, tidak perlu meniru aplikasi mobile
+          "User-Agent": "Mozilla/5.0 (compatible; WinkEnhancer/1.0)",
+        },
+        timeout: 15000,
+        validateStatus: () => true, // tangkap semua status
+      }
+    );
 
-// Halaman utama
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
+    const data = apiResponse.data;
+    console.log("API Response:", JSON.stringify(data));
 
-// Endpoint enhance (proxy ke API eksternal)
-app.post("/api/enhance", upload.single("image"), enhanceHandler);
-
-// Export untuk Vercel
-export default app;
+    // Cek sukses (sesuai struktur respons API)
+    if (
+      data &&
+      (data.status === true || data.statusCode === 200) &&
+      data.resultUrl
+    ) {
+      return res.json({
+        success: true,
+        resultUrl: data.resultUrl,
+        creator: data.creator || "",
+      });
+    } else {
+      // Ambil pesan error jika ada
+      const errorMsg =
+        data?.message || data?.error || "Respons API tidak valid";
+      throw new Error(errorMsg);
+    }
+  } catch (error) {
+    console.error("Proxy error:", error.message);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+}
