@@ -5,7 +5,7 @@
   <title>HD Photo Enhancer</title>
   <style>
     body { font-family: sans-serif; max-width: 600px; margin: 50px auto; text-align: center; }
-    input, button { margin: 10px; }
+    input, select, button { margin: 10px; font-size: 16px; }
     #result { margin-top: 20px; }
     .url-box { 
       background: #f5f5f5; 
@@ -36,8 +36,12 @@
 </head>
 <body>
   <h1>✨ HD Photo Enhancer</h1>
-  <p>Unggah foto, dapatkan URL hasil Ultra HD</p>
+  <p>Unggah foto & pilih skala pembesaran</p>
   <input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp">
+  <select id="scaleSelect">
+    <option value="4">4x (Ultra HD)</option>
+    <option value="2">2x (HD)</option>
+  </select>
   <button onclick="enhance()">Enhance</button>
   <div id="status"></div>
   <div id="result"></div>
@@ -48,17 +52,22 @@
       const file = fileInput.files[0];
       if (!file) return alert('Pilih foto dulu');
 
+      const scale = document.getElementById('scaleSelect').value;
+
       const formData = new FormData();
-      formData.append('image', file);   // <-- pastikan 'image'
+      formData.append('image', file);
+
+      // Kirim scale sebagai query parameter
+      const url = `/api/enhance?scale=${scale}`;
 
       document.getElementById('status').innerText = 'Memproses...';
       document.getElementById('result').innerHTML = '';
 
       try {
-        const res = await fetch('/api/enhance', { method: 'POST', body: formData });
+        const res = await fetch(url, { method: 'POST', body: formData });
         const data = await res.json();
         if (data.success) {
-          document.getElementById('status').innerText = '✅ Berhasil! URL hasil:';
+          document.getElementById('status').innerHTML = `✅ Berhasil! (${data.scale_applied || scale}x, ${data.engine || 'auto'})`;
           document.getElementById('result').innerHTML = `
             <div class="url-box" id="urlText">${data.resultUrl}</div>
             <button class="copy-btn" onclick="copyUrl()">📋 Salin URL</button>
