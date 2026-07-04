@@ -1,94 +1,224 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>HD Photo Enhancer</title>
-  <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 50px auto; text-align: center; }
-    input, select, button { margin: 10px; font-size: 16px; }
-    #result { margin-top: 20px; }
-    .url-box { 
-      background: #f5f5f5; 
-      padding: 12px; 
-      border-radius: 6px; 
-      word-break: break-all; 
-      font-family: monospace; 
-      margin: 10px 0;
-      text-align: left;
-    }
-    .copy-btn { 
-      background: #0070f3; 
-      color: white; 
-      border: none; 
-      padding: 8px 16px; 
-      border-radius: 4px; 
-      cursor: pointer; 
-      font-size: 14px;
-    }
-    .copy-btn:hover { background: #005bb5; }
-    .download-link { 
-      display: inline-block; 
-      margin-top: 10px; 
-      color: #0070f3; 
-      text-decoration: none; 
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HD Photo — Upscaler Foto</title>
+<style>
+  :root{
+    --ink:#1b1f23;
+    --paper:#f6f4ef;
+    --line:#20242a;
+    --accent:#2f5d50;
+    --accent-2:#c8562f;
+    --muted:#6b6f76;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Georgia', 'Iowan Old Style', serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px 80px;}
+  header{border-bottom:3px solid var(--ink);padding-bottom:18px;margin-bottom:36px;}
+  .eyebrow{
+    font-family:'Courier New', monospace;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--accent-2);
+    margin:0 0 6px;
+  }
+  h1{margin:0;font-size:42px;line-height:1.05;letter-spacing:-0.01em;}
+  .sub{font-family:Arial, sans-serif;color:var(--muted);font-size:15px;margin-top:10px;max-width:520px;}
+
+  .panel{
+    background:#fff;
+    border:1px solid var(--ink);
+    padding:28px;
+    margin-bottom:24px;
+  }
+
+  .field{margin-bottom:18px;}
+  label{font-family:Arial, sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:8px;}
+  input[type=file]{font-family:Arial, sans-serif;font-size:13px;}
+
+  .scale-row{display:flex;gap:10px;}
+  .scale-btn{
+    flex:1;
+    font-family:Arial, sans-serif;
+    padding:12px;
+    border:1px solid var(--ink);
+    background:#fff;
+    cursor:pointer;
+    font-size:14px;
+    letter-spacing:.02em;
+  }
+  .scale-btn.active{background:var(--ink);color:#fff;}
+
+  .run-btn{
+    width:100%;
+    padding:15px;
+    font-family:Arial, sans-serif;
+    font-weight:bold;
+    letter-spacing:.03em;
+    font-size:14px;
+    text-transform:uppercase;
+    background:var(--accent-2);
+    color:#fff;
+    border:none;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .run-btn:disabled{background:#c9b3a7;cursor:not-allowed;}
+  .run-btn:hover:not(:disabled){background:#a8461f;}
+
+  .status{
+    font-family:Arial, sans-serif;
+    font-size:13px;
+    color:var(--muted);
+    margin-top:14px;
+    min-height:18px;
+  }
+  .status.error{color:#a8321f;}
+  .status.ok{color:var(--accent);}
+
+  .preview{margin-top:24px;}
+  .preview img{width:100%;display:block;border:1px solid var(--ink);}
+  .preview-caption{font-family:Arial, sans-serif;font-size:12px;color:var(--muted);margin-top:8px;display:flex;justify-content:space-between;}
+  .download{
+    display:inline-block;margin-top:14px;
+    font-family:Arial, sans-serif;font-size:13px;font-weight:bold;
+    text-decoration:none;color:#fff;background:var(--accent);
+    padding:10px 18px;
+  }
+  footer{font-family:Arial, sans-serif;font-size:12px;color:var(--muted);margin-top:40px;text-align:center;}
+</style>
 </head>
 <body>
-  <h1>✨ HD Photo Enhancer</h1>
-  <p>Unggah foto & pilih skala pembesaran</p>
-  <input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp">
-  <select id="scaleSelect">
-    <option value="4">4x (Ultra HD)</option>
-    <option value="2">2x (HD)</option>
-  </select>
-  <button onclick="enhance()">Enhance</button>
-  <div id="status"></div>
-  <div id="result"></div>
+<div class="wrap">
 
-  <script>
-    async function enhance() {
-      const fileInput = document.getElementById('imageInput');
-      const file = fileInput.files[0];
-      if (!file) return alert('Pilih foto dulu');
+  <header>
+    <p class="eyebrow">Image Enhancer</p>
+    <h1>HD Photo</h1>
+    <p class="sub">Perbesar dan pertajam foto kamu jadi resolusi lebih tinggi. Unggah dari perangkat, pilih skala, selesai.</p>
+  </header>
 
-      const scale = document.getElementById('scaleSelect').value;
+  <div class="panel">
+    <div class="field">
+      <label for="imgFile">Pilih file dari perangkat</label>
+      <input type="file" id="imgFile" accept="image/*">
+    </div>
 
-      const formData = new FormData();
-      formData.append('image', file);
+    <div class="field">
+      <label>Skala Perbesaran</label>
+      <div class="scale-row">
+        <button class="scale-btn active" data-scale="2">2×</button>
+        <button class="scale-btn" data-scale="4">4×</button>
+      </div>
+    </div>
 
-      const url = `/api/enhance?scale=${scale}`;
+    <button class="run-btn" id="runBtn">Proses Foto</button>
+    <div class="status" id="statusEl"></div>
+  </div>
 
-      document.getElementById('status').innerText = 'Memproses...';
-      document.getElementById('result').innerHTML = '';
+  <div class="panel" id="resultPanel" style="display:none;">
+    <label>Hasil</label>
+    <div class="preview">
+      <img id="resultImg" src="" alt="Hasil HD">
+      <div class="preview-caption">
+        <span id="resultMeta"></span>
+      </div>
+      <a class="download" id="downloadLink" href="" download="hd-photo.png" target="_blank">Unduh Gambar</a>
+    </div>
+  </div>
 
-      try {
-        const res = await fetch(url, { method: 'POST', body: formData });
-        const data = await res.json();
-        if (data.success) {
-          document.getElementById('status').innerHTML = `✅ Berhasil! (${data.scale_applied || scale}x, ${data.engine || 'auto'})`;
-          document.getElementById('result').innerHTML = `
-            <div class="url-box" id="urlText">${data.resultUrl}</div>
-            <button class="copy-btn" onclick="copyUrl()">📋 Salin URL</button>
-            <br>
-            <a class="download-link" href="${data.resultUrl}" download target="_blank">⬇️ Download Gambar</a>
-          `;
-        } else {
-          document.getElementById('status').innerText = '❌ Gagal: ' + data.error;
-        }
-      } catch (e) {
-        document.getElementById('status').innerText = '❌ Error: ' + e.message;
-      }
+  <footer>Ditenagai oleh api.jerexd.my.id · engine Picsart</footer>
+</div>
+
+<script>
+// Catatan: frontend TIDAK menyimpan API key sama sekali.
+// Semua permintaan dikirim ke endpoint sendiri (/api/hd), dan endpoint
+// itulah (berjalan di server Vercel) yang menambahkan API key sebelum
+// meneruskan ke api.jerexd.my.id. Lihat file api/hd.js.
+
+let selectedScale = "2";
+
+document.querySelectorAll(".scale-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".scale-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedScale = btn.dataset.scale;
+  });
+});
+
+function setStatus(msg, type){
+  const el = document.getElementById("statusEl");
+  el.textContent = msg;
+  el.className = "status" + (type ? " "+type : "");
+}
+
+function setLoading(loading, msg){
+  const btn = document.getElementById("runBtn");
+  btn.disabled = loading;
+  btn.textContent = loading ? "Memproses..." : "Proses Foto";
+  if(loading) setStatus((msg||"Sedang memproses gambar, mohon tunggu...") , "");
+}
+
+async function processImage(file){
+  const form = new FormData();
+  form.append("scale", selectedScale);
+  form.append("file", file);
+
+  const res = await fetch("/api/hd", {
+    method: "POST",
+    body: form
+  });
+
+  let data;
+  try{
+    data = await res.json();
+  }catch(e){
+    throw new Error("Server tidak memberikan respons yang valid.");
+  }
+  if(!res.ok || !data.status){
+    throw new Error(data && data.message ? data.message : "Permintaan ditolak server.");
+  }
+  if(!data.result || !data.result.upscaled_url){
+    throw new Error("API tidak mengembalikan hasil gambar.");
+  }
+  return data.result;
+}
+
+document.getElementById("runBtn").addEventListener("click", async ()=>{
+  document.getElementById("resultPanel").style.display = "none";
+  setStatus("");
+
+  try{
+    const fileInput = document.getElementById("imgFile");
+    if(!fileInput.files || !fileInput.files[0]){
+      setStatus("Pilih file gambar terlebih dahulu.", "error");
+      return;
     }
 
-    function copyUrl() {
-      const urlText = document.getElementById('urlText').innerText;
-      navigator.clipboard.writeText(urlText).then(() => {
-        alert('URL berhasil disalin!');
-      }).catch(() => {
-        alert('Gagal menyalin, silakan copy manual.');
-      });
-    }
-  </script>
+    setLoading(true, "Memproses dengan engine HD (skala " + selectedScale + "x)...");
+    const result = await processImage(fileInput.files[0]);
+    setLoading(false);
+
+    document.getElementById("resultImg").src = result.upscaled_url;
+    document.getElementById("downloadLink").href = result.upscaled_url;
+    document.getElementById("resultMeta").textContent =
+      `Skala: ${result.scale_applied || selectedScale+"x"} · Engine: ${result.engine || "-"}`;
+    document.getElementById("resultPanel").style.display = "block";
+    setStatus("Selesai!", "ok");
+
+  }catch(err){
+    setLoading(false);
+    setStatus(err.message || "Terjadi kesalahan.", "error");
+  }
+});
+</script>
 </body>
 </html>
