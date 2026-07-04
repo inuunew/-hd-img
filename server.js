@@ -1,49 +1,58 @@
 import express from "express";
 import multer from "multer";
-import path from "node:path";
-import fs from "node:fs";
-import { enhanceImage } from "./wink.js";
+import axios from "axios";
+import FormData from "form-data";
 
 const app = express();
-const PORT = 3000;
 
-// Folder untuk upload sementara
-const uploadDir = "assets";
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+// Konfigurasi multer (simpan file di memory)
+const upload = multer({ storage: multer.memoryStorage() });
 
-// Konfigurasi multer
-const storage = multer.diskStorage({
-  destination: uploadDir,
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB
-
+// Sajikan file statis dari folder public
 app.use(express.static("public"));
 
-// Endpoint untuk enhance
+// Endpoint enhance
 app.post("/enhance", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "Tidak ada file yang diunggah" });
+      return res.status(400).json({ error: "Tidak ada file gambar" });
     }
 
-    const imagePath = req.file.path;
-    console.log("Processing:", imagePath);
+    // Siapkan FormData
+    const form = new FormData();
+    form.append("image", req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
+    });
 
-    const resultUrl = await enhanceImage(imagePath);
-    console.log("Result:", resultUrl);
+    // Panggil API eksternal
+    const apiResponse = await axios.post(
+      "https://api.jerexd.my.id/api/ai/wink?apikey=jere_yy3jllbdh2f0",
+      form,
+      {
+        headers: form.getHeaders(),
+        timeout: 15000, // 15 detik
+      }
+    );
 
-    // Hapus file upload setelah diproses (opsional)
-    fs.unlink(imagePath, () => {});
-
-    res.json({ success: true, resultUrl });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    const data = apiResponse.data;
+    if (data.status && data.resultUrl) {
+      res.json({
+        success: true,
+        resultUrl: data.resultUrl,
+        creator: data.creator || "",
+      });
+    } else {
+      throw new Error("Respons API tidak valid");
+    }
+  } catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).json({
+      success: false,
+      error: error.response?.data?.message || error.message,
+    });
   }
 });
 
-app.listen(PORT, () => console.log(`Server berjalan di http://localhost:${PORT}`));
+// Export untuk Vercel (tidak pakai app.listen)
+export default app;
