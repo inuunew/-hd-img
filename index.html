@@ -7,12 +7,36 @@
     body { font-family: sans-serif; max-width: 600px; margin: 50px auto; text-align: center; }
     input, button { margin: 10px; }
     #result { margin-top: 20px; }
-    img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .url-box { 
+      background: #f5f5f5; 
+      padding: 12px; 
+      border-radius: 6px; 
+      word-break: break-all; 
+      font-family: monospace; 
+      margin: 10px 0;
+      text-align: left;
+    }
+    .copy-btn { 
+      background: #0070f3; 
+      color: white; 
+      border: none; 
+      padding: 8px 16px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-size: 14px;
+    }
+    .copy-btn:hover { background: #005bb5; }
+    .download-link { 
+      display: inline-block; 
+      margin-top: 10px; 
+      color: #0070f3; 
+      text-decoration: none; 
+    }
   </style>
 </head>
 <body>
   <h1>✨ HD Photo Enhancer</h1>
-  <p>Unggah foto, dapatkan versi Ultra HD</p>
+  <p>Unggah foto, dapatkan URL hasil Ultra HD</p>
   <input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp">
   <button onclick="enhance()">Enhance</button>
   <div id="status"></div>
@@ -34,19 +58,28 @@
         const res = await fetch('/api/enhance', { method: 'POST', body: formData });
         const data = await res.json();
         if (data.success) {
-          document.getElementById('status').innerText = 'Berhasil!';
+          document.getElementById('status').innerText = '✅ Berhasil! URL hasil:';
           document.getElementById('result').innerHTML = `
-            <a href="${data.resultUrl}" target="_blank">
-              <img src="${data.resultUrl}" alt="Hasil HD">
-            </a>
-            <p><a href="${data.resultUrl}" download>Download Gambar</a></p>
+            <div class="url-box" id="urlText">${data.resultUrl}</div>
+            <button class="copy-btn" onclick="copyUrl()">📋 Salin URL</button>
+            <br>
+            <a class="download-link" href="${data.resultUrl}" download target="_blank">⬇️ Download Gambar</a>
           `;
         } else {
-          document.getElementById('status').innerText = 'Gagal: ' + data.error;
+          document.getElementById('status').innerText = '❌ Gagal: ' + data.error;
         }
       } catch (e) {
-        document.getElementById('status').innerText = 'Error: ' + e.message;
+        document.getElementById('status').innerText = '❌ Error: ' + e.message;
       }
+    }
+
+    function copyUrl() {
+      const urlText = document.getElementById('urlText').innerText;
+      navigator.clipboard.writeText(urlText).then(() => {
+        alert('URL berhasil disalin!');
+      }).catch(() => {
+        alert('Gagal menyalin, silakan copy manual.');
+      });
     }
   </script>
 </body>
