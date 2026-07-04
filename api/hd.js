@@ -3,7 +3,7 @@
 // Menerima file gambar dari frontend, lalu meneruskannya ke API jerexd
 // dengan API key yang disimpan aman di server (bukan terekspos di browser).
 
-const formidable = require("formidable");
+const { formidable } = require("formidable");
 const fs = require("fs");
 
 const JEREXD_ENDPOINT = "https://api.jerexd.my.id/api/tools/hd2";
@@ -32,7 +32,7 @@ module.exports = async (req, res) => {
     const blob = new Blob([buffer], { type: uploaded.mimetype || "image/jpeg" });
 
     const upstreamForm = new FormData();
-    upstreamForm.append("apikey", apiKey);
+    upstreamForm.append("apikey", JEREXD_API_KEY);
     upstreamForm.append("scale", scale);
     upstreamForm.append("file", blob, uploaded.originalFilename || "photo.jpg");
 
